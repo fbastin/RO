@@ -1,0 +1,152 @@
+%& -shell-escape
+
+\documentclass[11pt]{book}%
+
+\usepackage{amsmath, amsthm}%
+\usepackage{amsfonts}%
+\usepackage{amssymb}%
+\usepackage{graphicx}
+\usepackage{wrapfig}
+
+\usepackage{url}
+\usepackage[utf8]{inputenc}
+
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows}
+\usepackage{pgfplots}
+
+\usepackage{slashbox}
+
+\usepackage[left=2cm,top=2cm,right=2cm]{geometry}
+
+\newcommand{\citep}[1]{\cite{#1}}
+\def\st{\mbox{s.c. }}
+\def\si{ \mbox{ si }}
+
+\usepackage{quotchap}
+
+%----------------------------------------------------------
+\theoremstyle{plain}
+\newtheorem{acknowledgement}{Acknowledgement}
+\newtheorem{algorithm}{Algorithm}
+\newtheorem{axiom}{Axiom}
+\newtheorem{case}{Case}
+\newtheorem{claim}{Claim}
+\newtheorem{conclusion}{Conclusion}
+\newtheorem{condition}{Condition}
+\newtheorem{conjecture}{Conjecture}
+\newtheorem{corollary}{Corollary}
+\newtheorem{criterion}{Criterion}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Exemple}
+\newtheorem{exercise}{Exercice}
+\newtheorem{lemma}{Lemma}
+\newtheorem{notation}{Notation}
+\newtheorem{problem}{Problem}
+\newtheorem{remark}{Remark}
+\newtheorem{solution}{Solution}
+\newtheorem{summary}{Summary}
+\newtheorem{theorem}{Theorem}
+\numberwithin{equation}{section}
+
+\def\bx{\ensuremath{\boldsymbol{x}}}
+\def\XX{\ensuremath{\mathcal{X}}}
+\def\NN{\ensuremath{\mathcal{N}}}
+\def\RR{\ensuremath{\mathcal{R}}}
+
+\usepackage[T1]{fontenc}
+\usepackage[frenchb]{babel}
+\usepackage{mathlist}
+
+\usepackage{enumerate}
+
+%-----------------------------------------------------------
+
+\begin{document}
+
+\shorthandoff{:}
+
+\frontmatter
+
+\thispagestyle{empty}
+
+\begin{center}
+{\Huge \bf \sc Modèles de Recherche Opérationnelle}
+
+\mbox{}
+
+\includegraphics[width=0.7\linewidth]{dscf0035.jpg}
+		
+\mbox{}
+
+{\Large Fabian Bastin}\\
+{\normalsize \url{bastin@iro.umontreal.ca}}
+\mbox{}\\Département d'Informatique et de Recherche Opérationnelle\\
+Université de Montréal\\\mbox{}\\
+\url{http://www.iro.umontreal.ca/~bastin}\\
+\includegraphics[width=2cm]{cc.png}
+\end{center}
+
+\pagebreak{}
+
+\thispagestyle{empty}
+
+\vspace*{\stretch{1}}
+
+\noindent
+\small
+La présente version de ce document s'inspire des notes de Patrice Marcotte, Bernard Gendron, ainsi que des livres {\sl Introduction to Operational Research}~\cite{HillLieb01} et {\sl The Basics of Practical Optimization}~\cite{Levy09}.
+
+\vspace*{\stretch{1}}
+
+{
+\noindent
+\footnotesize{Photographie de couverture: viaduc de Millau, France.\\
+\copyright Fabian Bastin, 2006}
+}
+
+\vspace*{\stretch{1}}
+
+\noindent
+\includegraphics{cc.png}\\
+Le présent document peut être modifié et redistribué à des fins non commerciales, sous conditions d'être diffusé sous les même conditions.\\
+\copyright Fabian Bastin, 2015
+
+\vspace*{\stretch{0.01}}
+
+\tableofcontents
+
+\mainmatter
+
+\input{intro}
+
+\input{lineaire}
+
+\input{nonlineaire}
+
+\input{entiere}
+
+\input{reseaux}
+
+\input{proba}
+
+\input{dynamique}
+
+\input{simulation}
+
+\backmatter
+
+\input{annexe}
+
+%\pagebreak
+\addcontentsline{toc}{chapter}{Bibliographie}
+%\nocite{*}
+\makeatletter
+\bibliographystyle{myplain}
+\bibliography{refs}
+\@mkboth{Bibliography}{Bibliographie}
+\makeatother
+
+\vspace{\stretch{1}}
+
+\end{document}

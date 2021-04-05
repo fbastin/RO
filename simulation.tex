@@ -1,0 +1,315 @@
+\chapter{Simulation}
+
+\section{Introduction}
+
+Simuler un système stochastique consiste à imiter son comportement pour estimer sa performance
+Un modèle de simulation est une représentation du système stochastique permettant de générer un grand nombre d'événements aléatoires et d'en tirer des observations statistiques.
+
+\begin{example}[Jeu de hasard]
+Chaque partie consiste à tirer une pièce de monnaie jusqu'à ce que la différence entre le nombre de faces et le nombre de piles soit égale à 3.
+Chaque tirage coûte 1\$, et chaque partie jouée rapporte 8\$ au joueur.
+Nous aurons par exemple les jeux
+\begin{itemize}
+\item
+ FFF: gain de 8\$-3\$=5\$;
+\item
+ PFPPP: gain de 8\$-5\$=3\$;
+\item
+ PFFPFPFPPPP: perte de 8\$-11\$=3\$.
+\end{itemize}
+Nous nous demandons par conséquent s'il est intéressant de jouer.
+Pour répondre à cette question, nous allons simuler le jeu.
+Il y a deux façons de le faire:
+\begin{itemize}
+\item
+nous pouvons jouer pendant un certain temps sans miser d'argent;
+\item
+nous pouvons simuler le jeu par ordinateur.
+\end{itemize}
+Néanmoins, simuler une seule partie ne nous aide pas à prendre une décision.
+Pour cela, il faudrait voir ce qui se passe sur un grand nombre de parties et mesurer le gain moyen
+(ou la perte moyenne).
+
+Dans cet exemple, nous pouvons définir les éléments d'un modèle de simulation comme suit
+\begin{description}
+\item[système stochastique]: tirages successifs;
+\item[horloge]: nombre de tirages;
+\item[définition de l'état du système]: $N(t)$, le nombre de faces moins le nombre de piles après $t$ tirages;
+\item[événements modifiant l'état du système]: tirage de pile ou de face;
+\item[méthode de génération d'événements]: génération d'un nombre aléatoire uniforme;
+\item[formule de changement d'état]: $N(t+1) = N(t) + 1$, si $F$ est tirée; $N(t) - 1$, si $P$ est tirée;
+\item[performance]: $8 - t$, lorsque $N(t)$ atteint +3 ou -3.
+\end{description}
+\end{example}
+
+\section{Files d'attente}
+
+\subsection{Concepts de base}
+
+Un système de file d'attente consiste d'un ou de plusieurs serveurs
+qui fournissent un service d'une certaine nature à des clients qui se
+présentent, et qui sont issus d'une population donnée.
+Les clients qui arrivent et trouvent tous les serveurs occupés
+rejoindront (généralement) une ou plusieurs files (ou lignes) devant
+les serveurs, d'où la qualification de file d'attente.
+\index{file!d'attente}.
+Quelques exemples de files d'attente sont repris dans la
+Table~\ref{tab:queueing}.
+\begin{table}[htb]
+\begin{center}
+\begin{tabular}{lll}
+{\bf système} & {\bf Serveurs} & {\bf Clients} \\
+\hline
+Banque & Guichets & Clients \\
+Hôpital & Docteurs, infirmiéres, lits &  Patients \\
+Système informatique & Unités centrales, dispositifs I/O & Travaux \\
+Manufacture & Machines, travailleurs & Composants \\
+Centre d'appel & Serveurs & Appels entrants \\
+\hline
+\end{tabular}
+\end{center}
+\caption{Exemples de files d'attente}
+\label{tab:queueing}
+\end{table}
+Le système de file d'attente est caractérisé par trois composants:
+\begin{enumerate}
+\item le processus d'arrivée;
+\item le mécanisme de service;
+\item la discipline de file.
+\end{enumerate}
+
+Spécifier le processus d'arrivée pour un système de file d'attente
+revient à décrire comment les clients arrivent dans le système. Soit
+$A_i$ le temps d'inter-arrivées entre les arrivées des $(i-1)^e$ et
+$i^e$ clients. Si $A_1$, $A_2,\ldots$, sont supposés être des
+variables i.i.d., nous dénoterons le temps d'interarrivée moyen (ou
+espéré) par $E[A]$ et appellerons $\lambda = 1/E[A]$ le taux d'arrivée
+des clients.
+
+Le mécanisme de service pour un système de file d'attente est articulé
+en spécifiant le nombre de serveurs (dénoté par $s$), où chaque
+serveur a sa propre file ou au contraire une seule file alimente tous
+les serveurs, et la distribution de probabilité des temps de service
+des clients.
+Soit $S_i$ le temps de service du $i^e$ client.
+Si $S_1$, $S_2,\ldots$, sont des variables aléatoires i.i.d., nous dénoterons
+le temps de service moyen d'un client par $E[S]$ et appelleront
+$\omega = 1/E[S]$ le taux de service d'un serveur.
+
+Nous parlerons de situation transitoire lorsque l'état du système dépend grandement de la situation initiale et du temps écoulé, et de situation d'équilibre lorsque l'état du système peut
+être considéré indépendant de la situation initiale et du temps écoulé.
+En situation d'équilibre, nous avons la formule de Little:
+\[
+ L=\lambda W,
+\]
+où
+$L$ est le nombre moyen de clients dans le système, $\lambda$, le taux moyen d'arrivée des nouveaux clients, et $W$ le temps moyen dans le système.
+
+\subsection{Modèle $M/M/1$}
+
+Il s'agit du modèle de file d'attente le plus courant, avec les caractéristiques suivantes:
+\begin{itemize}
+\item
+file d'attente: nombre infini de clients;
+\item
+stratégie de service: premier arrivé, premier servi (FIFO);
+\item
+un seul serveur;
+\item
+les taux d'arrivée et de service obéissent à des lois de Poisson.
+De manière équivalente, le temps entre l'arrivée de deux clients successifs et le temps de service obéissent à des lois exponentielles: on parle de processus Markoviens.
+\end{itemize}
+
+La notation générale pour les modèles de file d'attente est $X/Y/s$, où $X$ représente la loi du temps d'interarrivée, $Y$ est la loi du temps de service, et $s$ donne le nombre de serveurs.
+
+\begin{example}[File d'attente $M/M/1$]
+En situation d'équilibre, plusieurs résultats analytiques (obtenus par analyse du modèle mathématique) existent.
+Soit $\lambda$ le taux moyen d'arrivée et $\mu$ le taux moyen de service.
+Supposons que $\lambda < \mu$
+Le nombre moyen de clients dans le système vaut
+\[
+L = \frac{\lambda}{\mu-\lambda}.
+\]
+Le temps moyen d'attente dans le système vaut quant à lui
+\[
+W = \frac{1}{\mu-\lambda}.
+\]
+Il est aisé de vérifier ces résultats par simulation.
+Dans le cas présent, les éléments de la simulation sont:
+\begin{description}
+\item[système stochastique]: file d'attente $M/M/1$;
+\item[horloge] : temps écoulé;
+\item[définition de l'état du système]: $N(t)$, le nombre de clients dans le système au temps $t$;
+\item[événements modifiant l'état du système]: arrivée ou fin de service d'un client;
+\item[formule de changement d'état] : $N(t+1) = N(t) + 1$, si arrivée; $N(t) - 1$, si fin de service.
+\end{description}
+Nous allons voir deux méthodes pour étudier l'evolution du système dans le temps:
+\begin{itemize}
+\item
+ par intervalles de temps fixe;
+\item
+ par génération d'événement.
+\end{itemize}
+Nous supposerons que les valeurs des paramètres de notre système sont $\lambda$ = 3 clients par heure, et $\mu$ = 5 clients par heure.
+
+Dans le cas d'intervalles de temps fixe, l'idée est
+\begin{enumerate}
+\item
+faire écouler le temps d'un petit intervalle $\Delta t$;
+\item
+mettre à jour le système en déterminant les événements qui ont pu se produire durant l'intervalle
+$\Delta t$, et recueillir l'information sur la performance du système;
+\item
+retourner en 1.
+\end{enumerate}
+Ici, les événements sont soit des arrivées, soit des départs (fins de service).
+Si $\Delta t$ est suffisamment petit, nous pouvons considérer qu'il ne se produira qu'un seul événement (arrivée ou départ) durant cet intervalle de temps.
+
+Prenons $\Delta t$ égal à 0.1 heure (6 minutes).
+La probabilité qu'il y ait une arrivée durant cet intervalle de temps vaut:
+\[
+P_A = 1 - e^{-\lambda \Delta t} = 1-e^{-3/10} \approx 0.259.
+\]
+La probabilité qu'il y ait un départ durant cet intervalle de temps est:
+\[
+P_D = 1 - e^{-\mu \Delta t} = 1-e^{-5/10} \approx 0.393.
+\]
+Pour générer un événement, nous pouvons simplement tirer deux nombres aléatoires selon une loi $U[0,1]$.
+Si le premier nombre est strictement plus petit que 0.259, nous aurons une arrivée.
+Si le deuxième nombre est strictement inférieur à 0.393, nous considérerons un départ (si un client était en cours de service).
+Ceci pourrait par exemple donner les chiffres de la Table~\ref{tab:simultime}.
+
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+$t$ (min) & $N(t)$ & Nombre 1 & Arrivée & Nombre 2 & Départ \\
+\hline
+0 & 0 & & & & \\
+\hline
+6 & 1 & 0.096 & Oui & - & \\
+\hline
+12 & 1 & 0.569 & Non & 0.665 & Non \\
+\hline
+18 & 1 & 0.764 & Non & 0.842 & Non \\
+\hline
+24 & 1 & 0.492 & Non & 0.224 & Oui \\
+\hline
+30 & 0 & 0.950 & Non & - & \\
+\hline
+36 & 0 & 0.610 & Non & - & \\
+\hline
+42 & 1 & 0.145 & Oui & - & \\
+\hline
+48 & 1 & 0.484 & Non & 0.552 & Non \\
+\hline
+54 & 1 & 0.350 & Non & 0.590 & Non \\
+\hline
+60 & 0 & 0.430 & Non & 0.041 & Oui \\
+\hline
+\end{tabular}
+\caption{Simulation par intervalles de temps fixe.}
+\label{tab:simultime}
+\end{center}
+\end{table}
+D'après cet exemple, il est possible d'estimer les performances du système.
+Que se passe-t-il si nous voulons mesurer $W$, le temps moyen passé dans le système?
+Nous avons deux clients qui sont entrés dans le système et chacun y est resté 18 minutes ou 0.3 heures, aussi peut-on estimer $W$ par 0.3.
+Pourtant, la vraie valeur est $W = 1/(\mu-\lambda) = 0.5$.
+Il faudrait un \'echantillon beaucoup plus grand, et ce d'autant plus que nous devrions simuler le système en état d'équilibre.
+
+La génération d'événement peut se résumer comme suit:
+\begin{enumerate}
+\item
+faire écouler le temps jusqu'au prochain événement;
+\item
+mettre à jour le système en fonction de l'événement qui vient de se produire et générer aléatoirement le temps jusqu'au prochain événement; recueillir l'information sur la performance du système;
+\item
+retourner à 1.
+\end{enumerate}
+Nous pourrions ainsi obtenir la suite d'événements reprise dans la Table~\ref{tab:simulevents}.
+
+\begin{table}[htbp]
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|c|}
+\hline
+$t$ (min) & $N(T)$ & Temps & Temps &  Prochaine & Prochain & Prochain \\
+& & d'interarrivée & de service & arrivée & départ & événement \\
+\hline
+0 & 0 & 2.019 & - & 2.019 & - & Arrivée \\
+\hline
+2.019 & 1 & 16.833 & 13.123 & 18.852 & 15.142 & Départ \\
+\hline
+15.142 & 0 & - & - & 18.852 & - & Arrivée \\
+\hline
+18.852 & 1 & 28.878 & 22.142 & 47.730 & 40.994 & Départ \\
+\hline
+40.994 & 0 & - & - & 47.730 & - & Arrivée \\
+\hline
+47.730 & 1 & & & & & \\
+\hline
+\end{tabular}
+\caption{Simulation par événements.}
+\label{tab:simulevents}
+\end{center}
+\end{table}
+
+Si nous considérons une simulation comportant l'arrivée de 10000 clients, les résultats montrent que:
+\begin{itemize}
+\item
+ le nombre moyens de clients dans le système est $L \approx 1.5$;
+\item
+ le temps moyen dans le système est $W \approx 0.5$.
+\end{itemize}
+
+Remarque: des résultats analytiques existent pour des modèles simples (comme $M/M/1$), mais pas pour des files d'attente plus complexes.
+\end{example}
+
+\section{Simulation à événements discrets}
+
+L'approche s'est imposée dans nombre de problèmes de simulations.
+Le principe général est résumé dans l'ordinogramme de la Figure~\ref{fig:sim_flowchart}.
+
+\begin{figure}[htb]
+
+\tikzstyle{decision} = [diamond, draw, fill=blue!20,
+    text width=2.5cm, text badly centered, node distance=2.5cm, inner sep=0pt]
+\tikzstyle{block} = [rectangle, draw, fill=blue!20,
+    text width=2.5cm, text centered, rounded corners, minimum height=4em]
+\tikzstyle{line} = [draw, very thick, color=black!50, -latex']
+\tikzstyle{cloud} = [draw, ellipse,fill=yellow!20, node distance=2.5cm,
+    minimum height=2em]
+
+\begin{center}
+\begin{tikzpicture}[scale=2, node distance = 3cm, auto]
+    % Place nodes
+    \node [block] (init) {Initialisation};
+    \node [text width=2.2cm, cloud, left of=init, node distance=4.0cm] (clock) {Horloge de simulation mise à 0};
+    \node [text width=2.5cm, cloud, right of=init, node distance=4.0cm] (system) {Planification du ou des premiers(s) événement(s)};
+    \node [text width=2.1cm, block, below of=init, node distance=3.0cm] (event) {Gestion de l'événement actuel};
+    \node [text width=2.1cm, block, below of=event, node distance=3.0cm] (schedule) {Planification du ou des événements en découlant.};
+    \node [block, left of=schedule, node distance=5.0cm] (update) {Dépilement du prochain événement et avancement de l'horloge de simulation};
+    \node [text width=2.1cm, decision, below of=schedule, node distance=4.0cm] (decide) {Liste d'événements vide?};
+    \node [block, below of=decide, node distance=3.5cm] (stop) {Arrêt};
+    % Draw edges
+    \path [line] (init) -- (event);
+    \path [line] (event) -- (schedule);
+    \path [line] (schedule) -- (decide);
+    \path [line] (decide) -| node [near start, color=black] {non} (update);
+    \path [line] (update) |- (event);
+    \path [line] (decide) -- node [, color=black] {oui}(stop);
+    \path [line,dashed] (clock) -- (init);
+    \path [line,dashed] (system) -- (init);
+\end{tikzpicture}
+\caption{Schéma d'une simulation à événements discrets.}
+\label{fig:sim_flowchart}
+\end{center}
+\end{figure}
+
+\begin{small}
+\section{Notes}
+
+Ce chapitre se base essentiellement sur les notes de cours de Bernard Gendron, 2007.
+Pour plus de détails sur la simulation à événements discrets, nous renvoyons le lecteur aux notes du cours IFT3245, du même auteur: .
+
+\end{small}

@@ -1,0 +1,381 @@
+\chapter{Annexe}
+
+\section{Logiciels d'optimisation}
+
+\subsection{IOR Tutorial}
+
+Le logiciel IOR Tutorial, qui accompagne le livre {\sl Introduction to Operational Research} \citep{HillLieb01} est disponible gratuitement à l'adresse \url{http://highered.mcgraw-hill.com/sites/0073017795/student_view0/ior_tutorial.html}.
+Le logiciel est fourni sous la forme d'un exécutable sous l'environnement Microsoft Windows, et comme archive Java pour les autres plate-formes.
+Il est par conséquent utilisable sur la majorité des systèmes actuels.
+Le logiciel est intéressant pour rapidement tester des programmes d'optimisation simples, mais ne peut être considéré comme un solveur à part entière.
+Son interface graphique le rend néanmoins adapté pour une expérimentation rapide avec les exemples introduits dans lecours.
+
+\subsection{GAMS}
+
+% Développer la dualité
+
+GAMS est l'acronyme de {\bf G}eneralized {\bf A}lgebric {\bf M}odeling {\bf S}ystem.
+Il s'agit avant tout d'un langage servant à la formulation et à la résolution de modèle de programmation mathématique.
+En pratique, il s'agit d'un paquetage intégré qui permet de
+\begin{itemize}
+\item
+spécifier la structure du modèle d'optimisation;
+\item
+spécifier et calculer les données qui entrent dans le modèle;
+\item
+résoudre ce modèle;
+\item
+produire un rapport sur un modèle;
+\item
+conduire une analyse comparative.
+\end{itemize}
+GAMS peut être téléchargé à l'adresse \url{http://www.gams.com}.
+La licence de GAMS et des solveurs académique est passablement élevés, toutefois il est utilisable de manière gratuite en version de démonstration, ce qui permettra d'illustrer certains concepts de base du cours.
+
+Sous des environnements de type UNIX (incluant Mac OS X et la majorité des distributions Linux), GAMS s'utilise uniquement en ligne de commande.
+Sous Microsoft Windows, il dispose d'une interface graphique.
+
+\subsubsection{Formulation d'un problème simple}
+
+\begin{example}
+\label{gams_simple}
+Considérons le problème d'optimisation linéaire
+\begin{align*}
+\max_x \ & 109 x_1 + 90 x_2 + 115 x_3 \\
+\st & x_1 + x_2 + x_3 \leq 100; \\
+& 6x_1 + 4x_2 + 8x_3 \leq 500; \\
+& x_1,\ x_2,\ x_3 \geq 0.
+\end{align*}
+Le fichier GAMS décrivant se problème est constitué des parties suivantes:
+\begin{enumerate}
+\item
+spécification des variables;
+\item
+spécification des équations:
+\begin{itemize}
+\item
+déclaration;
+\item
+spécification de la structure algébrique;
+\end{itemize}
+\item
+définition du modèle;
+\item
+définition de la méthode de résolution.
+\end{enumerate}
+Ce problème peut être formulé sous GAMS comme suit:
+\begin{verbatim}
+VARIABLES
+  Z               Variable Z;
+
+POSITIVE VARIABLES
+  X1              Variable X1
+  X2              Variable X2
+  X3              Variable X3;
+
+EQUATIONS
+  Equation1       Equation 1
+  Equation2       Equation 2
+  Equation3       Equation 3;
+
+Equation1..
+  Z =E= 109*X1 + 90*X2 + 115*X3;
+
+Equation2..
+  X1 + X2 + X3 =L= 100;
+
+Equation3..
+  6*X1 + 4*X2 + 8*X3 =L= 500;
+
+MODEL Example1 /ALL/;
+
+SOLVE Example1 USING LP MAXIMIZING Z;
+\end{verbatim}
+Remarquons d'ores et déjà que chaque instruction se termine par un point-virgule.
+Leur omission produit une erreur de compilation.
+Détaillons les instructions.
+\end{example}
+
+\subsubsection{Spécification des variables}
+
+GAMS exige que les variables soient identifiées.
+Dans l'exemple précédent, nous avons les variables \verb|Z|, \verb|X1|, \verb|X2|, \verb|X3|:
+\begin{verbatim}
+VARIABLES
+  Z               Variable Z;
+
+POSITIVE VARIABLES
+  X1              Variable X1 (Optional Text)
+  X2              Variable X2
+  X3              Variable X3;
+\end{verbatim}
+Pour tout modèle construit avec GAMS, il convient d'identifier l'objectif à l'aide d'une variable, ici \verb|Z|. Autrement dit,
+\[
+\max_x c^Tx
+\]
+devient
+\begin{align*}
+\max\ & z\\
+\st\ & z=c^Tx, \\
+ & Z=CX.
+\end{align*}
+Les noms de variables peuvent avoir jusqu'à 31 caractères.
+Il est également possible de spécifier plus précisément le type des variables:\\
+\begin{tabular}{ll}
+\verb|VARIABLE| & variables non restreintes \\
+\verb|POSITIVE VARIABLE| & variables non négatives \\
+\verb|NEGATIVE VARIABLE| & variables non positives \\
+\verb|BINARY VARIABLE| & variables binaires (dans $\lbrace 0, 1\rbrace$) \\
+\verb|INTEGER VARIABLE| & variables entières (naturelles)
+\end{tabular}
+
+\subsubsection{Dénomination des équations}
+
+La spécification d'une équation consiste en deux parties.
+Il convient tout d'abord de déclarer ces équations: GAMS exige du modélisateur de nommer chaque équation à l'oeuvre dans le modèle.
+Dans l'exemple, les équations sont déclarées après le mot-clé \verb|EQUATIONS|
+\begin{verbatim}
+EQUATIONS
+  Equation1       Equation 1
+  Equation2       Equation 2
+  Equation3       Equation 3;
+\end{verbatim}
+Comme pour les variables, le nom d'une équation peut prendre jusqu'à 31 caractères.
+A droite du nom de l'équation figure un (bref) texte d'explications.
+
+Il nous faut de plus spécifier la structure algébrique: après avoir nommé les équations, la structure algébrique exacte doit être spécifiée en utilisant la notation \verb|..|:
+\begin{verbatim}
+Equation1..
+  Z =E= 109*X1 + 90*X2 + 115*X3;
+
+Equation2..
+  X1 + X2 + X3 =L= 100;
+
+Equation3..
+  6*X1 + 4*X2 + 8*X3 =L= 500;
+\end{verbatim}
+La forme algébrique exige l'utilisation d'une syntaxe speciale afin de définir la forme exacte de l'équation:\\
+\begin{tabular}{ll}
+\verb|=E=| & contrainte d'égalité \\
+\verb|=L=| & inférieur ou égal \\
+\verb|=G=| & supérieur ou égal
+\end{tabular}
+
+\subsubsection{Spécification du modèle}
+
+Le mot-clé \verb|MODEL| est utilisé pour identifier les modèles à résoudre.
+Il convient de
+\begin{enumerate}
+\item
+donner un nom au modèle (par exemple \verb|Example1|);
+\item
+spécifier les équations à inclure, entre des barres italiques \verb|/ /|.
+\end{enumerate}
+Ceci donne pour notre exemple
+\begin{verbatim}
+MODEL Example1 /ALL/;
+\end{verbatim}
+Nous pourrions aussi avoir
+\begin{verbatim}
+MODEL Example1 /Equation1, Equation2/;
+\end{verbatim}
+
+\subsubsection{Spécification du solveur}
+
+Le mot-clé \verb|SOLVE| indique à GAMS d'appliquer un solveur au modèle nommé, en utilisant les données définies juste avant l'instruction \verb|SOLVE|.
+Ainsi, dans notre exemple, nous avions:
+\begin{verbatim}
+SOLVE Example1 USING LP MAXIMIZING Z;
+\end{verbatim}
+Si nous avions affaire à un problème linéaire de minimisation, nous pourrions écrire
+\begin{verbatim}
+SOLVE Example1 USING LP MINIMIZING Z;
+\end{verbatim}
+En place de \verb|LP|, nous devrions écrire \verb|MIP| pour traiter un problème de programmation entière mixte:
+\begin{verbatim}
+SOLVE Example1 USING MIP MAXIMIZING Z;
+\end{verbatim}
+De même, nous spécifierons un problème non-linéaire avec le mot-clé \verb|NLP|:
+\begin{verbatim}
+SOLVE Example1 USING NLP MAXIMIZING Z;
+\end{verbatim}
+
+\subsubsection{Rapport de solution}
+
+A la fin de l'exécution, GAMS produit un rapport indiquant la solution trouvée, la valeur de la fonction objectif en cette solution, ainsi que différentes informations permettant d'analyser le comportement de l'algorithme d'optimisation, et diverses propriétés du problème en cours d'étude.
+En particulier, le résumé de rapport donne le nombre total de cas non optimaux, non réalisables et non bornés rencontrés.
+\begin{verbatim}
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+\end{verbatim}
+
+L'information sur les solutions peut être affichée de différentes manières:
+\begin{enumerate}
+\item
+sortie standard de GAMS;
+\item
+utilisation des commandes \verb|DISPLAY|;
+\item
+rappports additionels sur base des valeurs des solutions.
+\end{enumerate}
+
+La sortie standard de GAMS présente la solution sous forme d'un tableau, qui dans le cas de l'exemple est:
+\begin{verbatim}
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- EQU Equation1       .         .         .        1.000      
+---- EQU Equation2      -INF    100.000   100.000    52.000      
+---- EQU Equation3      -INF    500.000   500.000     9.500      
+
+  Equation1  Equation 1
+  Equation2  Equation 2
+  Equation3  Equation 3
+
+                       LOWER     LEVEL     UPPER    MARGINAL
+
+---- VAR Z              -INF   9950.000     +INF       .         
+---- VAR X1              .       50.000     +INF       .         
+---- VAR X2              .       50.000     +INF       .         
+---- VAR X3              .         .        +INF    -13.000      
+\end{verbatim}
+
+Le point simple ``.'' représente un zéro, tandis que \verb|INF| représente l'infini.
+
+\subsubsection{Sommations}
+
+La notation mathématique $\sum_j x_j$ se traduira par
+\begin{verbatim}
+SUM(j,x(j))
+\end{verbatim}
+En d'autres termes, nous avons la syntaxe
+\begin{verbatim}
+SUM( index of summation, names(index))
+\end{verbatim}
+Il est possible d'imbriquer les sommations. Ainsi, $\sum_j \sum_i x{ji}$ donnera
+\begin{verbatim}
+SUM(j,SUM(i,x(j,i))
+\end{verbatim}
+ou encore
+\begin{verbatim}
+SUM((j,i),x(j,i))
+\end{verbatim}
+
+\subsubsection{Définition d'ensemble}
+
+Spécifier les variables une à une est vite fastidieux, pour ne pas dire irréaliste (par exemple si nous avons un million de variables), c'est pourquoi en modélisation algébrique, nous utilisons des indices.
+GAMS met à disposition le mot clé \verb|SET| pour définir des ensembles, parcouru par un indice spécifié juste avant:
+\begin{verbatim}
+SET   ItemName   optional explanatory text for item
+  / element1   optional explanatory text for element,
+    element2   optional explanatory text for element /
+\end{verbatim}
+Par exemple,
+\begin{verbatim}
+SET   i   index /1*10/
+\end{verbatim}
+défini l'ensemble $\lbrace 1,2,\ldots,10 \rbrace$, qui peut être parcouru avec l'indice $i$.
+Il est possible d'associer un autre indice  au même ensemble  au moyen de la commande \verb|ALIAS|, par exemple
+\begin{example}
+ALIAS (i,j);
+\end{example}
+permet d'utiliser $j$ au lieu de $i$.
+Cette commande est utile par exemple pour traduire une contrainte de la forme
+\[
+x_{ij} + x_{ji} = 1,\ i = 1,\ldots,n,\ j=1,\ldots,n,
+\]
+$j$ et $i$ doivent indicer le même ensemble, mais écrire
+\begin{verbatim}
+SET  i  / 1*10 /
+          j  / 1*10 /
+\end{verbatim}
+mènerait GAMS à considérer $i$ et $j$ comme indexant deux ensembles.
+
+\subsubsection{Entrée de données}
+
+Les données sont entrées au moyen de quatre différents types de commandes GAMS:
+\begin{description}
+\item[SCALAR], pour les éléments ne dépendant pas d'ensembles; 
+\item[PARAMETERS], pour les éléments qui sont des vecteurs;
+\item[TABLES], pour des éléments de deux dimensions ou plus;
+\item[PARAMETERS], en affectation directe.
+\end{description}
+La manière la plus simple d'entrée des données est l'emploi de la commande \verb|SCALAR|, qui prend la syntaxe suivante dans le format basique:
+\begin{verbatim}
+SCALAR  ItemName  optional text   / value /;
+\end{verbatim}
+Dans le cas de vecteurs, nous utiliserons la syntaxe
+\begin{verbatim}
+PARAMETER  ItemName(Set)  optional text;
+   / element1  value,
+     element2  value  /;
+\end{verbatim}
+Pour les entrées multidimensionnelles, nous aurons
+\begin{verbatim}
+TABLE  ItemName(set1dep,set2dep)  optional text
+               set2elem1    set2elem2
+set1element1    value11      value12
+set1element2    value12      value22    ;
+\end{verbatim}
+Plutôt que d'utiliser des constantes, nous pouvons affecter les valeurs au moyen d'expressions mathématiques:
+\begin{verbatim}
+PARAMETER  ItemName(set1dep,set2dep)  optional text;
+           ItemName(set1dep,set2dep) = some expression;
+\end{verbatim}
+L'indice \verb|set2dep| est optionnel.
+
+L'exemple~\ref{gams_simple} peut ainsi se reformuler comme
+\begin{verbatim}
+SETS
+  i               Variables / X1, X2, X3 /;
+
+PARAMETERS
+  c(i)            Costs / X1 109
+                          X2 90
+                          X3 115 /
+
+  a(i)            Coeff / X1 6
+                          X2 4
+                          X3 8 /;
+
+VARIABLES
+  Z               Variable Z;
+
+POSITIVE VARIABLES
+  x(i)            Variables;
+
+EQUATIONS
+  Equation1       Equation 1
+  Equation2       Equation 2
+  Equation3       Equation 3;
+
+Equation1..
+  Z =E= sum(i, c(i)*x(i));
+
+Equation2..
+  sum(i, x(i)) =L= 100;
+
+Equation3..
+  sum(i, a(i)*x(i)) =L= 500;
+
+MODEL Example1 /ALL/;
+
+SOLVE Example1 USING LP MAXIMIZING Z;
+\end{verbatim}
+
+%\subsection{NEOS Server}
+
+\subsection{Autres logiciels}
+
+Les solutions logiciels retenues sont loin d'être les seules envisageables, et les choix sont volontairement orientés afin de répondre aux objectifs d'un cours d'introduction, mais ne représentent pas forcément un choix optimal.
+Il existe d'autres langages de modélisation intéressant (on pensera par exemple à AMPL), d'autres solveurs commerciaux ou gratuits.
+Nous nous désinteresserons cependant des solveurs intégrés dans les tableurs, les algorithmes proposés par défaut dans ceux-ci étant en général de faible qualité, en particulier en optimisation non-linéaire, et limités dans le nombre de variables qui peuvent être traités.
+Il est toutefois bon de noter que des outils existent pour importer/exporter des données entre un tableur et des outils tels que GAMS.
+
+\begin{small}
+\section{Notes}
+
+La section sur GAMS s'inspire partiellement du cours {\sl Applied Mathematical Programming} donné par Bruce A. McCarl à l'Université Texas A\&M.
+
+\end{small}

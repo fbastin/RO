@@ -1,0 +1,121 @@
+\begin{savequote}
+  OR is the art of winning wars without actually fighting.
+  \qauthor{Aurther Clarke}
+\end{savequote}
+
+\chapter{Introduction}
+
+\section{Les origines de la recherche opérationnelle}
+\label{sec:histoire}
+
+\begin{wrapfigure}{i}{0.15\textwidth}
+  \begin{center}
+    \includegraphics[width=0.14\textwidth]{Blackett-large.jpg}
+  \end{center}
+  \caption{Patrick Blackett}
+\end{wrapfigure}
+
+Les origines de la recherche opérationnelle, en abrégé RO, ne sont pas clairement définies, bien que Charles Babbage (1791--1871) soit souvent considéré comme le père de la recherche opérationnelle, en raison de ses travaux sur le coût du transport et le tri du courrier, menant à l'introduction du Penny Post en Angleterre, en 1840. %donner plus de détails.
+
+Un siècle plus tard, la seconde guerre mondiale, de part son envergure, créa une besoin urgent d'allouer de manière efficace des ressources limitées aux différentes opérations militaires et aux activités au sein de chaque opération.
+En particulier, l'organisation militaire britannique, puis américaine, mit à contribution un grand nombre de scientifiques pour gérer ces allocations, et s'occuper d'autres problèmes stratégiques et tactiques.
+Ce faisant, ils furent appelés à poursuivre des recherches sur des opérations (militaires), et constituèrent les premières équipes de RO, notamment celle dirigée par Patrick Blackett, prix Nobel de physique en 1948~\cite{Kirb03}.
+Leurs efforts furent significatifs dans la marche vers la victoire, par exemple en ce qui touche l'utilisation du radar, nouvellement développé.
+Ces succès encouragèrent la poursuite de l'utilisation de la RO dans d'autres domaines.
+La croissance importante de l'industrie d'après-guerre entraîna des problèmes, causés par la complexité croissante et la spécialisation dans les organisations, problèmes en fait proches de ceux présent lors du conflit.
+Au début des années 1950's, la RO avait pénétré une multitude d'organisations commerciales, industrielles, et gouvernementales.
+Et ce n'était que le début.
+
+Au moins deux autres facteurs ont joué un rôle clé dans la croissance rapide de la RO.
+Tout d'abord, des progrès substantiels ont été obtenus très tôt afin d'améliorer les techniques de RO.
+Ces techniques, dans leur mise en pratique, furent soutenues par l'essor des outils informatiques.
+
+\section{La nature de la recherche opérationnelle}
+\label{sec:nature_ro}
+
+``Rechercher sur des opérations'' touche tous les problèmes reliés à la conduite et à la coordination des opérations (activítés) au sein d'une organisation.
+Cette organisation peut représenter des domaines très divers: l'industrie manufacturière, le transport, la construction, les télécommuncations, la finance, les soins de santé,\ldots.
+La RO, associée à la révolution informatique, pénètre pratiquement tous les secteurs d'activités de la vie courante, même si sa présence est souvent invisible.
+
+La première étape de la ``recherche'' est l'observation attentive du problème et sa formulation, ainsi que la collecte de données associées.
+Il convient par la suite de construire un modéle scientifique qui tente l'abstraire l'essence du problème réel.
+Tout modèle est une simplification de la réalité, mais cette représentation doit être suffisamment précise pour capturer les caractéristiques essentielles de la situation, et de pouvoir tirer des conclusions valides pour le problème réelle.
+Il conviendra dès lors de tester ce modèle, et de le modifier au besoin.
+
+Une caractéristique additionnelle est que la RO essaye souvent de trouver la meilleure solution (dite solution optimale) pour le problème examiné.
+Cette solution peut ne pas être unique.
+Cette recherche d'optimalité est un thème important en RO, même si son interprétation en terme managériels peut être délicate.
+Il est difficile pour un individu de pouvoir maîtriser tous les aspects du problèmes à l'étude, de sorte que la RO est généralement plus un travail d'équipe, avec des experts en mathématiques, statistiques et probabilités, ingénierie, économie, administration, informatique, physiques, sciences comportementales, et les techniques spécifiques de la RO.
+
+\input{modelisation}
+
+\section{Algorithmes et logiciels}
+
+Au-delà de la modélisation, la résolution de problèmes de recherche opérationnelle nécessite de recourir à des algorithmes adapatés à la nature du problème, et capables de traiter de quelques dizaines à des millions de variables.
+Leur étude consistera par conséquent une partie importante du présent document.
+Même si de nombreux logiciels mettant en oeuvre ces algorithmes sont commerciaux, le monde de l'open-source n'est pas en reste avec notamment des projets tels que COIN-OR (\url{http://www.coin-or.org}). Il existe aussi diverses versions d'évaluations de solveurs commerciaux, ainsi que l'interface web NEOS (\url{http://www-neos.mcs.anl.gov}).
+L'utilisation de tels outils nécessitent toutefois l'apprentissage de langages de modélisation adaptés; dans ce cours, nous nous baserons sur le langage GAMS (\url{http://www.gams.com}).
+Ces langages servent à décrire dans des termes compréhensibles par le solveur le problème à résoudre.
+La dernière version de IOR-Tutorial, développé en Java et proposé en complément à Hillier et Lieberman~\cite{HillLieb01}, peut également se révéler un complément précieux pour se familiariser avec les techniques de recherche opérationnelle.
+
+\subsection{Un exemple avec GAMS}
+
+GAMS est l'acronyme de General Algebric Modeling System.
+Il consiste en un langage de description de problèmes, qui peut être compilé, et en une interface vers différent solveurs.
+Une version gratuite de démonstration, permettant de résoudre des problèmes de petite taille, est disponible en téléchargement à l'adress \url{http://www.gams.com}.
+Ce langage peut également être utilisé avec divers solveurs proposés sur NEOS.
+Nous reviendrons plus en détail ultérieurement sur la formulation d'un programme mathématique avec GAMS, et nous contenterons d'un petit exemple introductif à ce stade.
+
+Considérons un brasseur qui disposent des éléments suivants dans son stock:
+\begin{enumerate}
+\item
+malt (75 kg);
+\item
+houblon (60 kg);
+\item
+levure (50 kg).
+\end{enumerate}
+Deux produits peuvent être obtenus: de la bière légère et de la bière noire.
+Pour un kg de bière légère, il faut 2 kg de malt, 3 kg de houblon, et 2 kg de levure.
+Pour un kg de bière noire, il faut 3 kg de malt, 1 kg de houblon, et 5/3 kg de levure.
+La bière noire est vendue la moitié du prix de la bière légère.
+En supposant que toute la production sera vendue, le brasseur souhaiterait décider des quantités de bières noire et légère à produire pour optimiser son profit.
+Le programme GAMS résultant est
+\begin{verbatim}
+set b types of beer /light, dark/;
+
+set i inputs /malt, hops, yeast/
+
+parameter r(i) raw supplies /malt 75, hops 60, yeast 50/;
+
+table a(i,b) input requirements
+
+      light dark
+malt  2     3
+hops  3     1
+yeast 2     1.67
+
+parameter p(b) selling price / light 2, dark 1/;
+
+variables pi profit (maximand)
+          x(b) production level;
+
+equations profit defines gross revenue
+          supply(i) input supply constraint;
+
+profit..     pi =e= sum(b, p(b) * x(b));
+supply(i)..  sum(b, a(i,b)*x(b)) =L= r(i);
+
+model beer /all/;
+
+x.lo(b) = 0;
+
+solve beer using lp maximizing pi;
+\end{verbatim}
+
+\begin{small}
+\section{Notes}
+
+Le contenu des Section~\ref{sec:histoire} et \ref{sec:nature_ro} se base principalement sur Hillier et Lieberman~\cite{HillLieb01}, Chapitre~1. La Section~\ref{sec:modeles} est construite à partir du Chapitre~1 de Levy~\cite{Levy09}. L'exemple GAMS est dû à Thomas F. Rutherford.
+
+\end{small}
