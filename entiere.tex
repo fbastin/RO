@@ -1305,7 +1305,7 @@ Mais il est rare que leur ajout permette de résoudre le probleme à la racine.
 L'ajout de coupes permet toutefois de réduire le nombre de sous-problèmes traités par l'algorithme de Branch-and-Bound.
 Nous pouvons même ajouter des coupes pour chaque sous-problème (pas seulement à la racine): nous obtenons alors un algorithme de branch-and-cut.
 
-\section{Modélisation avec GAMS}
+\section{Modélisation avec Julia et JuMP}
 
 \begin{example}[Echangeurs de chaleur]
 Considérons un problème simplifié d'affection de flux de processus à des échangeurs de chaleur;
@@ -1341,102 +1341,95 @@ D & 11 & 74 & 81 & 21 \\
 \caption{coûts d'affectation des échangeurs de chaleur}
 \label{tab:streams}
 \end{figure}
-Le problème peut se formuler en GAMS comme
+Le problème peut se formuler en Julia avec JuMP comme
 \begin{verbatim}
-HEAT.GMS 
+using JuMP
+using HiGHS
 
-$TITLE Test Problem 
-$OFFSYMXREF 
-$OFFSYMLIST 
+# Ensembles 
+I = ["A", "B", "C", "D"] # flux (streams)
+J = [1, 2, 3, 4]         # échangeurs (exchangers)
 
-SETS 
-     I  streams     / A, B, C, D / 
-     J  exchangers  / 1*4 / ; 
+# Coûts d'affectation du flux i à l'échangeur j
+C = Dict(
+    ("A", 1) => 94.0, ("A", 2) => 1.0,  ("A", 3) => 54.0, ("A", 4) => 68.0,
+    ("B", 1) => 74.0, ("B", 2) => 10.0, ("B", 3) => 88.0, ("B", 4) => 82.0,
+    ("C", 1) => 73.0, ("C", 2) => 88.0, ("C", 3) => 8.0,  ("C", 4) => 76.0,
+    ("D", 1) => 11.0, ("D", 2) => 74.0, ("D", 3) => 81.0, ("D", 4) => 21.0
+)
 
- TABLE C(I,J) Cost of assigning stream i to exchanger j 
+# Modèle
+heat_model = Model(HiGHS.Optimizer)
 
-         1    2    3    4 
-    A   94    1   54   68 
-    B   74   10   88   82 
-    C   73   88    8   76 
-    D   11   74   81   21 ; 
- 
+# Variables binaires
+@variable(heat_model, x[I, J], Bin)
 
- VARIABLES X(I,J), Z; 
- BINARY VARIABLES X(I,J); 
+# Contraintes
+@constraint(heat_model, ass_i[j in J], sum(x[i, j] for i in I) == 1)
+@constraint(heat_model, ass_j[i in I], sum(x[i, j] for j in J) == 1)
 
- EQUATIONS ASSI(J), ASSJ(I), OBJ; 
+# Objectif
+@objective(heat_model, Min, sum(C[(i, j)] * x[i, j] for i in I, j in J))
 
- ASSI(J).. SUM( I, X(I,J) ) =E= 1; 
- ASSJ(I).. SUM( J, X(I,J) ) =E= 1; 
- OBJ..     Z =E= SUM ( (I,J), C(I,J)*X(I,J) ) ; 
+# Supprimer l'affichage des logs
+set_silent(heat_model)
 
- MODEL HEAT / ALL /; 
+# Résolution
+optimize!(heat_model)
 
- OPTION LIMROW = 0; 
- OPTION LIMCOL = 0; 
- OPTION SOLPRINT = OFF; 
-
- SOLVE HEAT USING MIP MINIMIZING Z; 
-
- DISPLAY X.L, Z.L ;  
- \end{verbatim}
-La commende \verb|OPTION SOLPRINT=OFF| supprime l'impression de la solution; la sortie sera contrôlée par la commande \verb|DISPLAY| placé juste à
- la suite.
+# Affichage des résultats
+println("Coût minimal Z = ", objective_value(heat_model))
+for i in I, j in J
+    if value(x[i, j]) > 0.5
+        println("Flux ", i, " affecté à l'échangeur ", j)
+    end
+end
+\end{verbatim}
+La commande \verb|set_silent(heat_model)| supprime l'impression des détails de résolution du solveur ; l'affichage de la solution finale est ensuite contrôlé par les instructions d'affichage à la suite.
 \end{example}
 
 \begin{example}[Problème de production]
 Nous souhaitons maximiser le profit que nous pourrions obtenir en considérant 3 produits.
-Il n'y a pas coût de productions unitaires, mais des coûts fixes sont présent pour le premier et le deuxième produits.
+Il n'y a pas de coût de production unitaire, mais des coûts fixes sont présents pour le premier et le deuxième produit.
 Chaque produit est stocké, et nous ne pouvons pas dépasser le volume disponible.
-Le code GAMS du problème est
+Le code Julia avec JuMP du problème est
 \begin{verbatim}
- VARIABLES
-  z                    profit;
+using JuMP
+using HiGHS
 
-POSITIVE VARIABLES
-  x1                   produit1
-  x2                   produit2
-  x3                   produit3;
+# Modèle
+prod_model = Model(HiGHS.Optimizer)
 
-BINARY VARIABLES
-  y1
-  y2                           ;
+# Variables positives
+@variable(prod_model, x1 >= 0) # produit 1
+@variable(prod_model, x2 >= 0) # produit 2
+@variable(prod_model, x3 >= 0) # produit 3
 
-EQUATIONS
-  Objective             Maximize profit
-  Ressource
-  Upper1                limit on product 1
-  Upper2                limit on product 2
-  Upper3                limit on product 3;
+# Variables binaires (activation des coûts fixes)
+@variable(prod_model, y1, Bin)
+@variable(prod_model, y2, Bin)
 
-Objective..
-  z =E= 2*x1 + 3*x2 + 0.8*x3 - 3*y1 - 2*y2;
+# Contraintes
+@constraint(prod_model, ressource, 0.2*x1 + 0.4*x2 + 0.2*x3 <= 1)
+@constraint(prod_model, upper1, x1 <= 3*y1)
+@constraint(prod_model, upper2, x2 <= 2*y2)
+@constraint(prod_model, upper3, x3 <= 5)
 
-Ressource..
-  0.2*x1 + 0.4*x2 + 0.2*x3 =L= 1;
+# Objectif
+@objective(prod_model, Max, 2*x1 + 3*x2 + 0.8*x3 - 3*y1 - 2*y2)
 
-Upper1..
-  x1 =L= 3*y1;
+# Critère d'optimalité MIP Gap (5%)
+set_attribute(prod_model, "mip_rel_gap", 0.05)
 
-Upper2..
-  x2 =L= 2*y2;
-1
-Upper3..
-  x3 =L= 5;
-
-MODEL example /ALL/;
-
-OPTION optcr = 0.05;
-
-SOLVE example USING mip maximizing z;
+# Résolution
+optimize!(prod_model)
 \end{verbatim}
 Notons la ligne
  \begin{verbatim}
-OPTION optcr = 0.05;
+set_attribute(prod_model, "mip_rel_gap", 0.05)
 \end{verbatim}
 qui nous donne le critère d'optimalité sur la valeur optimale.
-Dans le cas présent, nous exigeons que l'écart relatif entre la borne supérieur et la borne inférieure soit inférieur à 5\%.
+Dans le cas présent, nous exigeons que l'écart relatif entre la borne supérieure et la borne inférieure soit inférieur à 5\%.
 \end{example}
 
 \section{Exercices}
@@ -1456,4 +1449,4 @@ Utiliser l'algorithme de Branch \& Bound pour résoudre le problème
 \section{Notes}
 
 Le contenu de ce chapitre est repris des notes de cours de Patrice Marcotte (2001) et de Bernard Gendron (2007).
-L'exemple GAMS sur les échangeurs de chaleur est dû à Grossmann.
+L'exemple original en GAMS sur les échangeurs de chaleur est dû à Grossmann.

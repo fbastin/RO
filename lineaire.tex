@@ -1329,130 +1329,88 @@ Nous obtenons le programme mathématique linéaire
 & 6x_1 + 4x_2 + 8x_3 \leq 500, \\
 & x_1, x_2, x_3 \geq 0,
 \end{align*}
-ce qui peut se traduire en GAMS comme suit:
+ce qui peut se traduire en Julia avec JuMP comme suit :
 \begin{verbatim}
-SETS
+using JuMP
+using HiGHS
 
-  Crop                 Crop production
-    / Corn             Corn production
-      Wheat            Wheat production
-      Cotton           Cotton production /
+# Ensembles
+crops = ["Corn", "Wheat", "Cotton"]
+resources = ["Land", "Labor"]
 
-  Resource             Elément de ressources utilisées dans le modèle
-    / Land             Land used by crop
-      Labor            Labord used by crop /;
+# Données
+revenue = Dict("Corn" => 109.0, "Wheat" => 90.0, "Cotton" => 115.0)
+resource_available = Dict("Land" => 100.0, "Labor" => 500.0)
 
-VARIABLES
-  Profit                Net income from crops;
+resource_use = Dict(
+    ("Land", "Corn") => 1.0, ("Land", "Wheat") => 1.0, ("Land", "Cotton") => 1.0,
+    ("Labor", "Corn") => 6.0, ("Labor", "Wheat") => 4.0, ("Labor", "Cotton") => 8.0
+)
 
-POSITIVE VARIABLES
-  Production(Crop)      Production by crop;
+# Modèle
+farm_model = Model(HiGHS.Optimizer)
 
-SCALAR  LandAvailable  Total Land  / 100 /;
+# Variables
+@variable(farm_model, production[c in crops] >= 0)
 
-PARAMETER
+# Contraintes
+@constraint(farm_model, resource_con[r in resources],
+    sum(resource_use[(r, c)] * production[c] for c in crops) <= resource_available[r])
 
-  Revenue(Crop)               Revenues from crop production
-     / Corn      109
-       Wheat     90
-       Cotton    115 /
+# Objectif
+@objective(farm_model, Max, sum(revenue[c] * production[c] for c in crops))
 
-  ResourceAvailable(Resource) Resource availability
-     / Land      100
-       Labor     500 /;
+# Résolution
+optimize!(farm_model)
 
-TABLE   ResourceUse(Resource, Crop)  Resource used in the model
-          Corn  Wheat  Cotton
-  Land     1     1      1
-  Labor    6     4      8     ;
-
-EQUATIONS
-  Objective             Maximimze farm income
-  ResourceEq(Resource)  Resource Constraint;
-
-Objective..
-  Profit =E= SUM(Crop, Revenue(Crop)*Production(Crop));
-
-ResourceEq(Resource)..
-  SUM(Crop, ResourceUse(Resource,Crop)*Production(Crop))
-   =L= ResourceAvailable(Resource);
-
-MODEL FarmIncome /ALL/;
-
-SOLVE FarmIncome USING LP MAXIMIZING Profit;
+# Affichage des résultats
+println("Profit = ", objective_value(farm_model))
+for c in crops
+    println("Production($c) = ", value(production[c]))
+end
+for r in resources
+    println("ResourceConstraint($r) = ", value(resource_con[r]))
+end
 \end{verbatim}
-L'exécution de GAMS sur ce fichier donne
+L'exécution de ce script Julia donne le résultat suivant :
 \begin{verbatim}
----- EQU ResourceEq  Resource Constraint
-
-         LOWER     LEVEL     UPPER    MARGINAL
-
-Land      -INF    100.000   100.000    52.000      
-Labor     -INF    500.000   500.000     9.500      
-
-                       LOWER     LEVEL     UPPER    MARGINAL
-
----- VAR Profit         -INF   9950.000     +INF       .         
-
-  Profit  Net income from crops
-
----- VAR Production  Production by crop
-
-          LOWER     LEVEL     UPPER    MARGINAL
-
-Corn        .       50.000     +INF       .         
-Wheat       .       50.000     +INF       .         
-Cotton      .         .        +INF    -13.000      
+Profit = 9950.0
+Production(Corn) = 50.0
+Production(Wheat) = 50.0
+Production(Cotton) = 0.0
+ResourceConstraint(Land) = 100.0
+ResourceConstraint(Labor) = 500.0
 \end{verbatim}
 
-La première partie de cet extrait indique que les deux contraintes, sur la terre et la main d'oeuvre, sont actives: toutes les resources sont employées.
-Les variables duales optimales correspondantes peuvent par conséquent être non-nulles, et représentent la valeur marginale de ces contraintes (actives).
-Nous voyons en particulier ici que la terre a la plus grande valeur marginale.
+L'évaluation des contraintes indique que les deux contraintes, sur la terre (Land) et la main d'œuvre (Labor), sont actives (leur niveau atteint la valeur maximale de 100 et 500 respectivement) : toutes les ressources sont employées.
+Les variables duales optimales correspondantes peuvent par conséquent être non nulles et représentent la valeur marginale (shadow price) de ces contraintes.
+Nous voyons en particulier que la terre a la plus grande valeur marginale.
 
-La seconde partie donnent les quantités de plantes cultivées.
-Seuls le maïs et le blé sont produits, mais pas le coton.
-Le dual contient trois contraintes comme nous avons avons trois variables primales.
-Il est facile de vérifier que les deux premières contraintes sont actives, mais pas la troisième, mais dépasse la borne inférieure de 13 unités.
+Les quantités de cultures produites montrent que seuls le maïs (Corn) et le blé (Wheat) sont produits, mais pas le coton (Cotton).
 
-Nous pouvons otenir les valeurs des variables d'écart avec la ligne
+En JuMP, nous pouvons obtenir les valeurs des variables duales (les multiplicateurs de Lagrange / variables duales associés aux contraintes) et les coûts réduits des variables à l'aide des fonctions \verb|shadow_price| et \verb|reduced_cost| :
 \begin{verbatim}
-OPTION SOLSLACK = 1;
+# Obtenir les prix d'ombre (shadow prices) des contraintes
+for r in resources
+    println("Shadow price ($r) = ", shadow_price(resource_con[r]))
+end
+
+# Obtenir les coûts réduits (reduced costs) des variables de décision
+for c in crops
+    println("Reduced cost ($c) = ", reduced_cost(production[c]))
+end
 \end{verbatim}
-avant la commande \verb|SOLVE|, ce qui dans cas confirme que les contraintes sont actives.
+Ce qui donne en sortie :
 \begin{verbatim}
-         LOWER     SLACK     UPPER    MARGINAL
-
-Land      -INF       .      100.000    52.000      
-Labor     -INF       .      500.000     9.500
+Shadow price (Land) = 52.0
+Shadow price (Labor) = 9.5
+Reduced cost (Corn) = -0.0
+Reduced cost (Wheat) = -0.0
+Reduced cost (Cotton) = -13.0
 \end{verbatim}
-Si nous ajoutons la commande
-\begin{verbatim}
-DISPLAY Profit.L, Production.L, ResourceEq.M, ResourceUse;
-\end{verbatim}
-nous obtenons en sortie:
-\begin{verbatim}
-----     53 VARIABLE Profit.L              =     9950.000  Net income from crops
-
-----     53 VARIABLE Production.L  Production by crop
-
-Corn  50.000,    Wheat 50.000
-
-
-----     53 EQUATION ResourceEq.M  Resource Constraint
-
-Land  52.000,    Labor  9.500
-
-
-----     53 PARAMETER ResourceUse  Resource used in the model
-
-             Corn       Wheat      Cotton
-
-Land        1.000       1.000       1.000
-Labor       6.000       4.000       8.000
-\end{verbatim}
-La syntaxe \verb|.L| conduit à obtenir les valeurs optimales des variables primales (ou de la solution) quand appliqué à une variable, et la valeur du terme de gauche d'une équation de contrainte, quand à appliqué à une contrainte.
-La syntaxe \verb|.M| permet d'obtenir le multiplicateur optimal associée à une équation, si appliqué à une équation.
-Dans le cas d'une variable, il nous permet de connaître la valeur excédentaire pour la contrainte duale associée.
+La fonction \verb|value| renvoie la valeur optimale d'une variable ou l'expression d'une contrainte à l'optimum.
+La fonction \verb|shadow_price| (ou \verb|dual|) permet d'obtenir le multiplicateur optimal associé à une contrainte.
+Dans le cas d'une variable de décision, la fonction \verb|reduced_cost| permet de connaître son coût réduit. Ici, le coût réduit du coton est de -13,0, ce qui signifie que le profit de l'agriculteur diminuerait de 13,0 par acre de coton s'il était contraint d'en cultiver une quantité infinitésimale.
 \end{example}
 
 \begin{small}

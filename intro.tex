@@ -54,19 +54,17 @@ Il est difficile pour un individu de pouvoir maîtriser tous les aspects du prob
 Au-delà de la modélisation, la résolution de problèmes de recherche opérationnelle nécessite de recourir à des algorithmes adapatés à la nature du problème, et capables de traiter de quelques dizaines à des millions de variables.
 Leur étude consistera par conséquent une partie importante du présent document.
 Même si de nombreux logiciels mettant en oeuvre ces algorithmes sont commerciaux, le monde de l'open-source n'est pas en reste avec notamment des projets tels que COIN-OR (\url{http://www.coin-or.org}). Il existe aussi diverses versions d'évaluations de solveurs commerciaux, ainsi que l'interface web NEOS (\url{http://www-neos.mcs.anl.gov}).
-L'utilisation de tels outils nécessitent toutefois l'apprentissage de langages de modélisation adaptés; dans ce cours, nous nous baserons sur le langage GAMS (\url{http://www.gams.com}).
+L'utilisation de tels outils nécessite toutefois l'apprentissage de langages de modélisation adaptés ; dans ce cours, nous nous baserons sur le langage Julia avec le paquet de modélisation JuMP (\url{https://jump.dev}).
 Ces langages servent à décrire dans des termes compréhensibles par le solveur le problème à résoudre.
 La dernière version de IOR-Tutorial, développé en Java et proposé en complément à Hillier et Lieberman~\cite{HillLieb01}, peut également se révéler un complément précieux pour se familiariser avec les techniques de recherche opérationnelle.
 
-\subsection{Un exemple avec GAMS}
+\subsection{Un exemple avec Julia et JuMP}
 
-GAMS est l'acronyme de General Algebric Modeling System.
-Il consiste en un langage de description de problèmes, qui peut être compilé, et en une interface vers différent solveurs.
-Une version gratuite de démonstration, permettant de résoudre des problèmes de petite taille, est disponible en téléchargement à l'adress \url{http://www.gams.com}.
-Ce langage peut également être utilisé avec divers solveurs proposés sur NEOS.
-Nous reviendrons plus en détail ultérieurement sur la formulation d'un programme mathématique avec GAMS, et nous contenterons d'un petit exemple introductif à ce stade.
+Julia est un langage de programmation moderne, performant et de haut niveau. JuMP est un paquet de modélisation algébrique pour Julia, permettant de formuler et résoudre des problèmes d'optimisation mathématique.
+Julia et JuMP sont entièrement gratuits et open-source.
+Nous reviendrons plus en détail ultérieurement sur la formulation d'un programme mathématique avec JuMP, et nous contenterons d'un petit exemple introductif à ce stade.
 
-Considérons un brasseur qui disposent des éléments suivants dans son stock:
+Considérons un brasseur qui dispose des éléments suivants dans son stock:
 \begin{enumerate}
 \item
 malt (75 kg);
@@ -80,42 +78,45 @@ Pour un kg de bière légère, il faut 2 kg de malt, 3 kg de houblon, et 2 kg de
 Pour un kg de bière noire, il faut 3 kg de malt, 1 kg de houblon, et 5/3 kg de levure.
 La bière noire est vendue la moitié du prix de la bière légère.
 En supposant que toute la production sera vendue, le brasseur souhaiterait décider des quantités de bières noire et légère à produire pour optimiser son profit.
-Le programme GAMS résultant est
+Le programme Julia/JuMP résultant est
 \begin{verbatim}
-set b types of beer /light, dark/;
+using JuMP
+using HiGHS
 
-set i inputs /malt, hops, yeast/
+# Ensembles
+beers = ["light", "dark"]
+inputs = ["malt", "hops", "yeast"]
 
-parameter r(i) raw supplies /malt 75, hops 60, yeast 50/;
+# Paramètres
+r = Dict("malt" => 75.0, "hops" => 60.0, "yeast" => 50.0)
+p = Dict("light" => 2.0, "dark" => 1.0)
 
-table a(i,b) input requirements
+a = Dict(
+    ("malt", "light") => 2.0, ("malt", "dark") => 3.0,
+    ("hops", "light") => 3.0, ("hops", "dark") => 1.0,
+    ("yeast", "light") => 2.0, ("yeast", "dark") => 1.67
+)
 
-      light dark
-malt  2     3
-hops  3     1
-yeast 2     1.67
+# Modèle
+beer_model = Model(HiGHS.Optimizer)
 
-parameter p(b) selling price / light 2, dark 1/;
+# Variables
+@variable(beer_model, x[b in beers] >= 0)
 
-variables pi profit (maximand)
-          x(b) production level;
+# Contraintes
+@constraint(beer_model, supply[i in inputs], 
+    sum(a[(i, b)] * x[b] for b in beers) <= r[i])
 
-equations profit defines gross revenue
-          supply(i) input supply constraint;
+# Objectif
+@objective(beer_model, Max, sum(p[b] * x[b] for b in beers))
 
-profit..     pi =e= sum(b, p(b) * x(b));
-supply(i)..  sum(b, a(i,b)*x(b)) =L= r(i);
-
-model beer /all/;
-
-x.lo(b) = 0;
-
-solve beer using lp maximizing pi;
+# Résolution
+optimize!(beer_model)
 \end{verbatim}
 
 \begin{small}
 \section{Notes}
 
-Le contenu des Section~\ref{sec:histoire} et \ref{sec:nature_ro} se base principalement sur Hillier et Lieberman~\cite{HillLieb01}, Chapitre~1. La Section~\ref{sec:modeles} est construite à partir du Chapitre~1 de Levy~\cite{Levy09}. L'exemple GAMS est dû à Thomas F. Rutherford.
+Le contenu des Section~\ref{sec:histoire} et \ref{sec:nature_ro} se base principalement sur Hillier et Lieberman~\cite{HillLieb01}, Chapitre~1. La Section~\ref{sec:modeles} est construite à partir du Chapitre~1 de Levy~\cite{Levy09}. L'exemple original en GAMS est dû à Thomas F. Rutherford.
 
 \end{small}
